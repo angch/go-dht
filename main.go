@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/champii/go-dht/dht"
+	"github.com/jwoglom/go-dht/dht"
 	"github.com/urfave/cli"
 )
 

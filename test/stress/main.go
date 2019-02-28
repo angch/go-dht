@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/champii/go-dht/dht"
+	"github.com/jwoglom/go-dht/dht"
 )
 
 func main() {
