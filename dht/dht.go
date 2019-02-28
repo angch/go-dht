@@ -3,18 +3,19 @@ package dht
 import (
 	"encoding/hex"
 	"errors"
-	"github.com/cenkalti/backoff"
 	"math/rand"
 	"net"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff"
+
 	"github.com/vmihailenco/msgpack"
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/op/go-logging"
+	logging "github.com/op/go-logging"
 )
 
 type Dht struct {
@@ -30,7 +31,16 @@ type Dht struct {
 	gotBroadcast  [][]byte
 	messageChunks map[string]WaitingPartMsg
 	sentMsgs      map[string][]Packet
+	callbacks     DhtCallbacks
 }
+
+type DhtCallbacks interface {
+	Stored(packet Packet, hasStored bool)
+}
+
+type DhtEmptyCallbacks struct{}
+
+func (cb DhtEmptyCallbacks) Stored(packet Packet, hasStored bool) {}
 
 type DhtOptions struct {
 	NoRepublishOnExit bool
@@ -57,6 +67,10 @@ type WaitingPartMsg struct {
 }
 
 func New(options DhtOptions) *Dht {
+	return NewWithCallbacks(options, DhtEmptyCallbacks{})
+}
+
+func NewWithCallbacks(options DhtOptions, callbacks DhtCallbacks) *Dht {
 	if options.MaxStorageSize == 0 {
 		options.MaxStorageSize = 500000000 // ~500Mo
 	}
@@ -74,6 +88,7 @@ func New(options DhtOptions) *Dht {
 		messageChunks: make(map[string]WaitingPartMsg),
 		sentMsgs:      make(map[string][]Packet),
 		logger:        logging.MustGetLogger("dht"),
+		callbacks:     callbacks,
 	}
 
 	initLogger(res)
@@ -222,12 +237,11 @@ func (this *Dht) bootstrap() error {
 
 	this.logger.Debug("Resolved UDP addr of bootstrap")
 
-
 	bootstrapNode := NewNode(this, addr, []byte{})
 
 	// this.routing.AddNode(bootstrapNode.contact)
 
-    this.logger.Debug("NewNode from bootstrapNode")
+	this.logger.Debug("NewNode from bootstrapNode")
 	if err, hasErr := (<-bootstrapNode.Ping()).(error); hasErr {
 		return err
 	}
@@ -294,7 +308,7 @@ func (this *Dht) Start() error {
 			var err error
 			err = this.bootstrap()
 			if err != nil {
-				this.logger.Debug("Backoff, error in bootstrap: "+err.Error())
+				this.logger.Debug("Backoff, error in bootstrap: " + err.Error())
 			}
 			return err
 		}

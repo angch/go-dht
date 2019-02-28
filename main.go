@@ -183,8 +183,15 @@ func cluster(options dht.DhtOptions) {
 	}
 }
 
+type DhtCallbacks struct{}
+
+func (cb DhtCallbacks) Stored(packet dht.Packet, hasStored bool) {
+	fmt.Printf("packet data: %s header hash: %s\n", packet.GetData(), packet.GetHash())
+}
+
 func startOne(options dht.DhtOptions) *dht.Dht {
-	client := dht.New(options)
+	callbacks := DhtCallbacks{}
+	client := dht.NewWithCallbacks(options, callbacks)
 
 	if err := client.Start(); err != nil {
 		client.Logger().Critical(err)

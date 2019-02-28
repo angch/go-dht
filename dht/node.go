@@ -602,6 +602,8 @@ func (this *Node) Stored(packet Packet, hasStored bool) {
 
 	data := this.newPacket(Command_STORED, packet.Header.MessageHash, &Packet_Ok{Ok: hasStored})
 
+	this.dht.callbacks.Stored(packet, hasStored)
+
 	this.send([]Packet{data})
 }
 
