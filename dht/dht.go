@@ -14,7 +14,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	logging "github.com/op/go-logging"
+	"github.com/op/go-logging"
 )
 
 type Dht struct {
@@ -212,16 +212,10 @@ func (this *Dht) fetchNodes(hash Hash) []*Node {
 }
 
 func (this *Dht) bootstrap() error {
-	var addr *net.UDPAddr
-	operation := func() error {
-		this.logger.Debug("Connecting to bootstrap node", this.options.BootstrapAddr)
+	this.logger.Debug("Connecting to bootstrap node", this.options.BootstrapAddr)
 
-		var err error
-		addr, err = net.ResolveUDPAddr("udp", this.options.BootstrapAddr)
-		return err
-	}
+	addr, err := net.ResolveUDPAddr("udp", this.options.BootstrapAddr)
 
-	err := backoff.Retry(operation, backoff.NewExponentialBackOff())
 	if err != nil {
 		return err
 	}
@@ -294,7 +288,19 @@ func (this *Dht) Start() error {
 	this.running = true
 
 	if len(this.options.BootstrapAddr) > 0 {
-		if err := this.bootstrap(); err != nil {
+		operation := func() error {
+			this.logger.Debug("Starting bootstrap", this.options.BootstrapAddr)
+
+			var err error
+			err = this.bootstrap()
+			if err != nil {
+				this.logger.Debug("Backoff, error in bootstrap: "+err.Error())
+			}
+			return err
+		}
+
+		err := backoff.Retry(operation, backoff.NewExponentialBackOff())
+		if err != nil {
 			this.Stop()
 			return errors.New("Bootstrap: " + err.Error())
 		}
