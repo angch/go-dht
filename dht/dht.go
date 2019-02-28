@@ -36,11 +36,13 @@ type Dht struct {
 
 type DhtCallbacks interface {
 	Stored(packet Packet, hasStored bool)
+	OnStored(packet Packet, done CallbackChan)
 }
 
 type DhtEmptyCallbacks struct{}
 
-func (cb DhtEmptyCallbacks) Stored(packet Packet, hasStored bool) {}
+func (cb DhtEmptyCallbacks) Stored(packet Packet, hasStored bool)      {}
+func (cb DhtEmptyCallbacks) OnStored(packet Packet, done CallbackChan) {}
 
 type DhtOptions struct {
 	NoRepublishOnExit bool

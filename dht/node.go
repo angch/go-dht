@@ -610,6 +610,8 @@ func (this *Node) Stored(packet Packet, hasStored bool) {
 func (this *Node) OnStored(packet Packet, done CallbackChan) {
 	this.dht.logger.Debug(this, "> STORED")
 
+	this.dht.callbacks.OnStored(packet, done)
+
 	// this.dht.logger.Info("STORED WESH", packet.Header.ResponseTo)
 	done.c <- packet
 }
