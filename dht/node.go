@@ -834,8 +834,8 @@ func (this *Node) send(packets []Packet) chan interface{} {
 		c:     res,
 	}
 
-	// this.dht.logger.Warning("ADD CMD QUEUE", cmdQueueHash, hex.EncodeToString(packets[0].Header.ResponseTo))
-	// this.dht.logger.Warning("ADD CMD QUEUE", cmdQueueHash)
+	this.dht.logger.Warning("ADD CMD QUEUE", cmdQueueHash, hex.EncodeToString(packets[0].Header.ResponseTo))
+	this.dht.logger.Warning("ADD CMD QUEUE", cmdQueueHash)
 
 	this.dht.Unlock()
 

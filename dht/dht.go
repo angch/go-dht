@@ -3,6 +3,7 @@ package dht
 import (
 	"encoding/hex"
 	"errors"
+	"github.com/cenkalti/backoff"
 	"math/rand"
 	"net"
 	"os"
@@ -211,28 +212,43 @@ func (this *Dht) fetchNodes(hash Hash) []*Node {
 }
 
 func (this *Dht) bootstrap() error {
-	this.logger.Debug("Connecting to bootstrap node", this.options.BootstrapAddr)
+	var addr *net.UDPAddr
+	operation := func() error {
+		this.logger.Debug("Connecting to bootstrap node", this.options.BootstrapAddr)
 
-	addr, err := net.ResolveUDPAddr("udp", this.options.BootstrapAddr)
+		var err error
+		addr, err = net.ResolveUDPAddr("udp", this.options.BootstrapAddr)
+		return err
+	}
 
+	err := backoff.Retry(operation, backoff.NewExponentialBackOff())
 	if err != nil {
 		return err
 	}
+
+	this.logger.Debug("Resolved UDP addr of bootstrap")
+
 
 	bootstrapNode := NewNode(this, addr, []byte{})
 
 	// this.routing.AddNode(bootstrapNode.contact)
 
+    this.logger.Debug("NewNode from bootstrapNode")
 	if err, hasErr := (<-bootstrapNode.Ping()).(error); hasErr {
 		return err
 	}
+	this.logger.Debug("no error pinging bootstrap node")
 
 	_ = this.fetchNodes(this.hash)
+
+	this.logger.Debug("fetched nodes with hash")
 
 	for i, bucket := range this.routing.buckets {
 		if len(bucket) != 0 {
 			continue
 		}
+
+		this.logger.Debug("routing bucket loop")
 
 		h := NewRandomHash()
 		h = this.routing.nCopy(h, this.hash, i)
