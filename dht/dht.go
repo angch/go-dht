@@ -37,12 +37,14 @@ type Dht struct {
 type DhtCallbacks interface {
 	Stored(packet Packet, hasStored bool)
 	OnStored(packet Packet, done CallbackChan)
+	Ready(node *Node)
 }
 
 type DhtEmptyCallbacks struct{}
 
 func (cb DhtEmptyCallbacks) Stored(packet Packet, hasStored bool)      {}
 func (cb DhtEmptyCallbacks) OnStored(packet Packet, done CallbackChan) {}
+func (cb DhtEmptyCallbacks) Ready(node *Node)                          {}
 
 type DhtOptions struct {
 	NoRepublishOnExit bool
@@ -266,6 +268,7 @@ func (this *Dht) bootstrap() error {
 		_ = this.fetchNodes(h)
 	}
 
+	this.callbacks.Ready(bootstrapNode)
 	this.logger.Info("Ready...")
 
 	if this.options.Interactif {
@@ -507,6 +510,9 @@ func (this *Dht) GetConnectedNumber() int {
 }
 
 func (this *Dht) StoredKeys() int {
+	if this.store == nil {
+		return 0
+	}
 	return len(this.store)
 }
 

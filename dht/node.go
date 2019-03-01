@@ -3,6 +3,7 @@ package dht
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net"
 	"time"
 
@@ -23,6 +24,14 @@ type Node struct {
 	lastSeen int64
 	addr     net.Addr
 	dht      *Dht
+}
+
+func (this *Node) GetAddr() net.Addr {
+	return this.addr
+}
+
+func (this *Node) GetLastSeen() int64 {
+	return this.lastSeen
 }
 
 // type PacketContact struct {
@@ -603,6 +612,8 @@ func (this *Node) Stored(packet Packet, hasStored bool) {
 	data := this.newPacket(Command_STORED, packet.Header.MessageHash, &Packet_Ok{Ok: hasStored})
 
 	this.dht.callbacks.Stored(packet, hasStored)
+
+	fmt.Printf("(stored keys: %d)\n", this.dht.StoredKeys())
 
 	this.send([]Packet{data})
 }
